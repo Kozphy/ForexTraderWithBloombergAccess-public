@@ -1,0 +1,49 @@
+experiment:
+  name: fx_momentum_relaxed_policy_demo
+  seed: 7
+
+data:
+  source: synthetic_demo
+  dataset_version: synthetic_fx_v1
+  timezone: UTC
+  point_in_time_required: true
+  missing_policy: reject
+  periods: 800
+  notes: "Demo config with relaxed policy thresholds to illustrate a PASS path on synthetic data."
+
+features:
+  fast_window: 5
+  slow_window: 20
+
+validation:
+  train_size: 120
+  test_size: 40
+  walk_forward: true
+  purge: 5
+  embargo: 3
+
+backtest:
+  rebalance: daily
+  position_lag: 1
+  spread_bps: 0.1
+  slippage_bps: 0.1
+  commission_bps: 0.0
+  max_participation: 0.10
+  enforce_liquidity: true
+
+portfolio:
+  method: equal_weight
+  max_abs_position: 1.0
+
+policy:
+  min_oos_sharpe: -5.0
+  max_drawdown: -1.0
+  min_observations: 10
+  require_leakage_pass: true
+  require_stress_pass: false
+  require_cost_adjusted_positive: false
+
+report:
+  require_oos: true
+  require_regime_analysis: true
+  require_costs: true

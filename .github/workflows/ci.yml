@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  research-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+
+      - name: Unit tests
+        run: pytest -q tests/test_research_core.py tests/test_institutional_controls.py
+
+      - name: Data-contract tests
+        run: pytest -q tests/test_data_contracts.py
+
+      - name: Leakage tests
+        run: pytest -q tests/test_leakage.py
+
+      - name: Research harness / policy / audit tests
+        run: pytest -q tests/test_research_harness.py
+
+      - name: Research smoke + evidence generation
+        run: |
+          python -m forex_quant.pipeline --config configs/baseline.yaml --artifacts artifacts
+          python -m forex_quant.pipeline --config configs/pass_demo.yaml --artifacts artifacts
+          python -m forex_quant.pipeline --config configs/fail_demo.yaml --artifacts artifacts
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          roots = list(Path("artifacts").glob("exp_*"))
+          assert roots, "expected evidence artifacts"
+          required = {
+              "manifest.json", "metrics.json", "validation.json",
+              "risk.json", "policy_decision.json", "equity_curve.csv", "report.md",
+          }
+          verdicts = set()
+          for root in roots:
+              missing = required - {p.name for p in root.iterdir()}
+              assert not missing, f"{root} missing {missing}"
+              policy = json.loads((root / "policy_decision.json").read_text())
+              assert policy["verdict"] in {"PASS", "FAIL"}
+              verdicts.add(policy["verdict"])
+              manifest = json.loads((root / "manifest.json").read_text())
+              for key in ("dataset_version", "dataset_fingerprint", "random_seed", "git_commit_sha", "execution_timestamp"):
+                  assert manifest.get(key) not in (None, ""), key
+          assert {"PASS", "FAIL"} <= verdicts, f"expected both PASS and FAIL demos, got {verdicts}"
+          print(f"validated {len(roots)} evidence bundles; verdicts={verdicts}")
+          PY
+
+      - name: Audit schema validation
+        run: |
+          python - <<'PY'
+          import json, tempfile
+          from pathlib import Path
+          from forex_quant.control_plane import AuditLog, ControlPlane, Deployment, DeploymentState, FailureClass
+          path = Path(tempfile.mkdtemp()) / "audit.jsonl"
+          plane = ControlPlane(AuditLog(path))
+          dep = Deployment(strategy_id="ci", experiment_id="exp_ci", human_approved=True, state=DeploymentState.PAPER)
+          plane.deploy(dep)
+          plane.detect_drift(dep.deployment_id, feature_zscore=5.0)
+          plane.kill(dep.deployment_id, "ci check", FailureClass.POLICY)
+          required = {"event_id", "event_type", "timestamp", "payload"}
+          for line in path.read_text().splitlines():
+              rec = json.loads(line)
+              assert required <= set(rec)
+          print("audit schema ok")
+          PY

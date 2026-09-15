@@ -1,0 +1,49 @@
+experiment:
+  name: fx_momentum_strict_fail_demo
+  seed: 7
+
+data:
+  source: synthetic_demo
+  dataset_version: synthetic_fx_v1
+  timezone: UTC
+  point_in_time_required: true
+  missing_policy: reject
+  periods: 800
+  notes: "Demo config with intentionally unreachable policy thresholds to illustrate FAIL evidence."
+
+features:
+  fast_window: 5
+  slow_window: 20
+
+validation:
+  train_size: 120
+  test_size: 40
+  walk_forward: true
+  purge: 5
+  embargo: 3
+
+backtest:
+  rebalance: daily
+  position_lag: 1
+  spread_bps: 0.8
+  slippage_bps: 0.4
+  commission_bps: 0.0
+  max_participation: 0.10
+  enforce_liquidity: true
+
+portfolio:
+  method: equal_weight
+  max_abs_position: 1.0
+
+policy:
+  min_oos_sharpe: 10.0
+  max_drawdown: -0.001
+  min_observations: 60
+  require_leakage_pass: true
+  require_stress_pass: true
+  require_cost_adjusted_positive: true
+
+report:
+  require_oos: true
+  require_regime_analysis: true
+  require_costs: true
