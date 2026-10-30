@@ -1,0 +1,52 @@
+{
+  "experiment_id": "exp_9b9f1c9a066c7c38",
+  "from_stage": "research",
+  "gates": [
+    {
+      "detail": "Out-of-sample Sharpe must exceed threshold",
+      "name": "oos_sharpe",
+      "observed": 1.0034466798558452,
+      "passed": true,
+      "threshold": -5.0
+    },
+    {
+      "detail": "Max drawdown must be milder than configured floor",
+      "name": "max_drawdown",
+      "observed": -0.030235263417347946,
+      "passed": true,
+      "threshold": -1.0
+    },
+    {
+      "detail": "",
+      "name": "min_observations",
+      "observed": 240,
+      "passed": true,
+      "threshold": 10
+    },
+    {
+      "detail": "",
+      "name": "leakage_tests",
+      "observed": true,
+      "passed": true,
+      "threshold": true
+    },
+    {
+      "detail": "",
+      "name": "stress_tests",
+      "observed": true,
+      "passed": true,
+      "threshold": false
+    },
+    {
+      "detail": "",
+      "name": "cost_adjusted_return",
+      "observed": 0.03552539958565859,
+      "passed": true,
+      "threshold": 0.0
+    }
+  ],
+  "passed": true,
+  "rationale": "All gates passed; promoted research -> candidate.",
+  "to_stage": "candidate",
+  "verdict": "PASS"
+}
